@@ -1,86 +1,118 @@
-import React, { useEffect } from 'react';
-import { useWebRTC } from '@/hooks/use-webrtc';
-import { BrutalButton } from '@/components/BrutalButton';
-import { NoiseOverlay } from '@/components/NoiseOverlay';
-import { VideoOff, MicOff, AlertTriangle, Zap, XSquare } from 'lucide-react';
+import React, { useEffect } from "react";
+import { useWebRTC } from "@/hooks/use-webrtc";
+import { BrutalButton } from "@/components/BrutalButton";
+import { NoiseOverlay } from "@/components/NoiseOverlay";
+import { VideoOff, MicOff, AlertTriangle, Zap, XSquare } from "lucide-react";
 
 export default function Home() {
-  const { 
-    appState, 
-    errorMsg, 
-    localVideoRef, 
-    remoteVideoRef, 
-    start, 
-    next, 
-    disconnect 
+  const {
+    appState,
+    errorMsg,
+    localVideoRef,
+    remoteVideoRef,
+    start,
+    next,
+    disconnect,
   } = useWebRTC();
 
-  // Prevent accidental back navigation closing the call
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (appState === 'CONNECTED' || appState === 'WAITING') {
+      if (appState === "CONNECTED" || appState === "WAITING") {
         e.preventDefault();
-        e.returnValue = '';
+        e.returnValue = "";
       }
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [appState]);
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-background selection:bg-accent selection:text-black flex flex-col items-center justify-center">
+    <main className="relative h-screen w-screen bg-background overflow-hidden flex items-center justify-center">
       <NoiseOverlay />
 
-      {/* BACKGROUND GRAPHIC (Visible when idle) */}
-      {(appState === 'IDLE' || appState === 'ERROR') && (
-        <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none select-none">
-          <span className="text-[20vw] font-bold leading-none tracking-tighter mix-blend-overlay">RAW.</span>
-        </div>
-      )}
+      {/* IDLE */}
+      {appState === "IDLE" && (
+        <div className="z-10 text-center space-y-10">
+          <h1 className="text-6xl font-bold tracking-tighter">
+            NO <span className="text-accent">LOGIN</span>
+            <br />
+            NO <span className="text-accent">LOGS</span>
+          </h1>
 
-      {/* VIEW: IDLE / ENTRY */}
-      {appState === 'IDLE' && (
-        <div className="relative z-10 max-w-lg w-full px-6 flex flex-col items-center text-center space-y-12">
-          <div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tighter">
-              NO <span className="text-accent">LOGIN.</span><br/>
-              NO <span className="text-accent">LOGS.</span>
-            </h1>
-            <p className="text-muted-foreground text-lg border-l-4 border-accent pl-4 text-left">
-              Instant, ephemeral video connections.
-              Mechanical matchmaking.
-              Close the tab and you cease to exist.
-            </p>
-          </div>
-          
-          <BrutalButton onClick={start} fullWidth className="h-24 text-2xl">
+          <BrutalButton onClick={start} className="h-24 text-2xl">
             <Zap className="mr-3 h-8 w-8" />
             INITIALIZE
           </BrutalButton>
-          
-          <div className="flex gap-4 text-xs text-muted-foreground opacity-50">
-            <span className="flex items-center"><VideoOff className="w-4 h-4 mr-1"/> Camera Required</span>
-            <span className="flex items-center"><MicOff className="w-4 h-4 mr-1"/> Mic Required</span>
+
+          <div className="flex gap-6 text-xs opacity-60">
+            <span className="flex items-center">
+              <VideoOff className="mr-1 h-4 w-4" /> Camera Required
+            </span>
+            <span className="flex items-center">
+              <MicOff className="mr-1 h-4 w-4" /> Mic Required
+            </span>
           </div>
         </div>
       )}
 
-      {/* VIEW: ERROR */}
-      {appState === 'ERROR' && (
-        <div className="relative z-10 max-w-md w-full px-6 flex flex-col items-center text-center space-y-8">
-          <AlertTriangle className="h-24 w-24 text-destructive animate-pulse" />
-          <h2 className="text-4xl font-bold text-destructive">FATAL ERROR</h2>
-          <div className="bg-destructive/10 border-2 border-destructive p-4 w-full">
-            <p className="text-destructive font-mono text-lg">{errorMsg}</p>
-          </div>
-          <BrutalButton onClick={() => disconnect()} variant="outline" fullWidth>
-            ACKNOWLEDGE
-          </BrutalButton>
+      {/* ERROR */}
+      {appState === "ERROR" && (
+        <div className="z-10 text-center space-y-6">
+          <AlertTriangle className="h-20 w-20 text-destructive mx-auto" />
+          <p className="font-mono text-destructive">{errorMsg}</p>
+          <BrutalButton onClick={disconnect}>RESET</BrutalButton>
         </div>
       )}
 
-      {/* VIEW: REQUESTING MEDIA */}
-      {appState === 'REQUESTING_MEDIA' && (
+      {/* ACTIVE */}
+      {(appState === "WAITING" || appState === "CONNECTED") && (
+        <div className="absolute inset-0">
+          {/* Remote */}
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover bg-black"
+          />
+
+          {/* Waiting overlay */}
+          {appState === "WAITING" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <h2 className="text-6xl font-bold text-accent animate-pulse">
+                SEARCHING…
+              </h2>
+            </div>
+          )}
+
+          {/* Local */}
+          <div className="absolute top-4 right-4 w-40 aspect-video brutal-border bg-black z-20">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              disablePictureInPicture
+              className="w-full h-full object-cover"
+            />
+            <span className="absolute bottom-0 left-0 bg-background px-2 text-xs font-bold">
+              YOU
+            </span>
+          </div>
+
+          {/* Controls */}
+          <div className="absolute bottom-0 w-full h-32 bg-background brutal-border flex gap-4 p-4">
+            <BrutalButton variant="destructive" onClick={disconnect} className="flex-1">
+              <XSquare className="mr-2" /> END
+            </BrutalButton>
+            <BrutalButton onClick={next} className="flex-[2] text-3xl bg-accent text-black">
+              NEXT →
+            </BrutalButton>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+        }      {appState === 'REQUESTING_MEDIA' && (
         <div className="relative z-10 flex flex-col items-center space-y-8">
           <div className="w-16 h-16 border-4 border-foreground border-t-accent animate-spin" />
           <h2 className="text-2xl font-bold animate-pulse">AWAITING HARDWARE PERMISSIONS...</h2>
