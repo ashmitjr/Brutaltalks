@@ -1,30 +1,4 @@
-import { useWebRTC } from "@/hooks/useWebRTC";
-
-export default function Home() {
-  const {
-    appState,
-    errorMsg,
-    localVideoRef,
-    remoteVideoRef,
-    start,
-    next,
-    disconnect,
-  } = useWebRTC();
-
-  return (
-    <main className="relative w-screen h-screen bg-black overflow-hidden flex flex-col">
-      {/* Remote Video */}
-      <div className="relative flex-1 bg-black">
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-
-        {/* Waiting Overlay */}
-        {appState === "WAITING" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+-black/80 z-20">
             <h2 className="text-3xl sm:text-5xl font-bold tracking-widest text-white animate-pulse">
               SEARCHING…
             </h2>
@@ -348,3 +322,92 @@ export default function Home() {
     </main>
   );
 }
+import { useWebRTC } from "@/hooks/useWebRTC";
+
+export default function Home() {
+  const {
+    appState,
+    errorMsg,
+    localVideoRef,
+    remoteVideoRef,
+    start,
+    next,
+    disconnect,
+  } = useWebRTC();
+
+  return (
+    <main className="relative w-screen h-screen bg-black overflow-hidden flex flex-col">
+      {/* Remote Video */}
+      <div className="relative flex-1 bg-black">
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {/* Waiting Overlay */}
+        {appState === "WAITING" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+            <h2 className="text-3xl sm:text-5xl font-bold tracking-widest text-white animate-pulse">
+              SEARCHING…
+            </h2>
+          </div>
+        )}
+
+        {/* Error Overlay */}
+        {appState === "ERROR" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-30 text-white gap-4">
+            <p className="text-lg text-red-400">{errorMsg}</p>
+            <button
+              onClick={start}
+              className="px-6 py-3 bg-white text-black font-bold rounded"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Local Preview */}
+      <div className="absolute bottom-24 right-4 w-28 h-40 sm:w-40 sm:h-56 border border-white/20 rounded-lg overflow-hidden z-40">
+        <video
+          ref={localVideoRef}
+          autoPlay
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Controls */}
+      <div className="h-20 flex items-center justify-center gap-4 bg-black z-50">
+        {appState === "IDLE" && (
+          <button
+            onClick={start}
+            className="px-8 py-3 bg-white text-black font-bold rounded-full"
+          >
+            Start
+          </button>
+        )}
+
+        {appState === "CONNECTED" && (
+          <>
+            <button
+              onClick={next}
+              className="px-6 py-3 bg-yellow-400 text-black font-bold rounded-full"
+            >
+              Next
+            </button>
+            <button
+              onClick={disconnect}
+              className="px-6 py-3 bg-red-500 text-white font-bold rounded-full"
+            >
+              End
+            </button>
+          </>
+        )}
+      </div>
+    </main>
+  );
+      }
