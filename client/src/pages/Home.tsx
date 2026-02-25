@@ -21,22 +21,23 @@ export default function Home() {
     disconnect,
   } = useWebRTC();
 
+  // Prevent accidental tab close during session
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const handler = (e: BeforeUnloadEvent) => {
       if (appState === "CONNECTED" || appState === "WAITING") {
         e.preventDefault();
         e.returnValue = "";
       }
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
   }, [appState]);
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-background flex items-center justify-center">
       <NoiseOverlay />
 
-      {/* IDLE VIEW */}
+      {/* ================= IDLE ================= */}
       {appState === "IDLE" && (
         <div className="z-10 text-center space-y-10">
           <h1 className="text-6xl font-bold tracking-tighter">
@@ -50,7 +51,7 @@ export default function Home() {
             INITIALIZE
           </BrutalButton>
 
-          <div className="flex gap-6 text-xs opacity-60">
+          <div className="flex gap-6 text-xs opacity-60 justify-center">
             <span className="flex items-center">
               <VideoOff className="mr-1 h-4 w-4" />
               Camera Required
@@ -63,7 +64,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ERROR VIEW */}
+      {/* ================= ERROR ================= */}
       {appState === "ERROR" && (
         <div className="z-10 text-center space-y-6">
           <AlertTriangle className="h-20 w-20 text-destructive mx-auto" />
@@ -72,15 +73,64 @@ export default function Home() {
         </div>
       )}
 
-      {/* ACTIVE VIEW */}
+      {/* ================= WAITING / CONNECTED ================= */}
       {(appState === "WAITING" || appState === "CONNECTED") && (
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-black">
           {/* Remote Video */}
           <video
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 w-full h-full object-cover bg-black"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Waiting Overlay */}
+          {appState === "WAITING" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <h2 className="text-6xl font-bold text-accent animate-pulse">
+                SEARCHING…
+              </h2>
+            </div>
+          )}
+
+          {/* Local Self Video */}
+          <div className="absolute top-4 right-4 w-40 aspect-video bg-black brutal-border z-20">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              disablePictureInPicture
+              className="w-full h-full object-cover"
+            />
+            <span className="absolute bottom-0 left-0 bg-background px-2 text-xs font-bold">
+              YOU
+            </span>
+          </div>
+
+          {/* Controls */}
+          <div className="absolute bottom-0 w-full h-32 bg-background brutal-border flex gap-4 p-4">
+            <BrutalButton
+              variant="destructive"
+              onClick={disconnect}
+              className="flex-1"
+            >
+              <XSquare className="mr-2" />
+              END
+            </BrutalButton>
+
+            <BrutalButton
+              onClick={next}
+              className="flex-[2] text-3xl bg-accent text-black"
+            >
+              NEXT →
+            </BrutalButton>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}            className="absolute inset-0 w-full h-full object-cover bg-black"
           />
 
           {/* Waiting Overlay */}
