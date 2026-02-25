@@ -1,15 +1,4 @@
-import { useEffect } from "react";
-import { useWebRTC } from "@/hooks/use-webrtc";
-import { BrutalButton } from "@/components/BrutalButton";
-import { NoiseOverlay } from "@/components/NoiseOverlay";
-import {
-  Zap,
-  VideoOff,
-  MicOff,
-  AlertTriangle,
-  X,
-  SkipForward,
-} from "lucide-react";
+import { useWebRTC } from "@/hooks/useWebRTC";
 
 export default function Home() {
   const {
@@ -22,68 +11,82 @@ export default function Home() {
     disconnect,
   } = useWebRTC();
 
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (appState === "CONNECTED" || appState === "WAITING") {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [appState]);
-
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-black text-white">
-      <NoiseOverlay />
+    <main className="relative w-screen h-screen bg-black overflow-hidden flex flex-col">
+      {/* Remote Video */}
+      <div className="relative flex-1 bg-black">
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        />
 
-      {/* ================= IDLE ================= */}
-      {appState === "IDLE" && (
-        <section className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-none">
-            BRUTAL
-            <br />
-            CONNECT
-          </h1>
-
-          <p className="mt-6 text-sm md:text-base opacity-70 max-w-xs">
-            No login. No history. No mercy.
-          </p>
-
-          <BrutalButton
-            onClick={start}
-            className="mt-10 h-20 w-full max-w-xs text-xl"
-          >
-            <Zap className="mr-2 h-6 w-6" />
-            START
-          </BrutalButton>
-
-          <div className="mt-8 flex gap-6 text-xs opacity-60">
-            <span className="flex items-center gap-1">
-              <VideoOff size={14} /> Camera
-            </span>
-            <span className="flex items-center gap-1">
-              <MicOff size={14} /> Mic
-            </span>
+        {/* Waiting Overlay */}
+        {appState === "WAITING" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+            <h2 className="text-3xl sm:text-5xl font-bold tracking-widest text-white animate-pulse">
+              SEARCHING…
+            </h2>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* ================= ERROR ================= */}
-      {appState === "ERROR" && (
-        <section className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
-          <AlertTriangle className="h-16 w-16 text-red-500" />
-          <p className="mt-4 text-sm font-mono text-red-400">
-            {errorMsg}
-          </p>
-          <BrutalButton onClick={disconnect} className="mt-6">
-            RESET
-          </BrutalButton>
-        </section>
-      )}
+        {/* Error Overlay */}
+        {appState === "ERROR" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-30 text-white gap-4">
+            <p className="text-lg text-red-400">{errorMsg}</p>
+            <button
+              onClick={start}
+              className="px-6 py-3 bg-white text-black font-bold rounded"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+      </div>
 
-      {/* ================= VIDEO STATES ================= */}
-      {(appState === "WAITING" || appState === "CONNECTED") && (
+      {/* Local Preview */}
+      <div className="absolute bottom-24 right-4 w-28 h-40 sm:w-40 sm:h-56 border border-white/20 rounded-lg overflow-hidden z-40">
+        <video
+          ref={localVideoRef}
+          autoPlay
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Controls */}
+      <div className="h-20 flex items-center justify-center gap-4 bg-black z-50">
+        {appState === "IDLE" && (
+          <button
+            onClick={start}
+            className="px-8 py-3 bg-white text-black font-bold rounded-full"
+          >
+            Start
+          </button>
+        )}
+
+        {appState === "CONNECTED" && (
+          <>
+            <button
+              onClick={next}
+              className="px-6 py-3 bg-yellow-400 text-black font-bold rounded-full"
+            >
+              Next
+            </button>
+            <button
+              onClick={disconnect}
+              className="px-6 py-3 bg-red-500 text-white font-bold rounded-full"
+            >
+              End
+            </button>
+          </>
+        )}
+      </div>
+    </main>
+  );
+}      {(appState === "WAITING" || appState === "CONNECTED") && (
         <section className="absolute inset-0 bg-black">
           {/* Remote Video */}
           <video
