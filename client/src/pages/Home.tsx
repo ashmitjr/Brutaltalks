@@ -1,4 +1,4 @@
-import { useWebRTC } from "@/hooks/useWebRTC";
+import { useWebRTC } from "@/hooks/use-webrtc";
 
 export default function Home() {
   const {
