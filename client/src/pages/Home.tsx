@@ -184,14 +184,16 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           min-height: 0;
+          overflow: hidden;
         }
 
         /* ────── VIDEO STACK ────── */
         .vids {
-          flex: 1;
           display: flex;
           flex-direction: column;
-          min-height: 0;
+          flex-shrink: 0;
+          height: 52vw;
+          max-height: 44vh;
         }
 
         .vslot {
@@ -200,7 +202,7 @@ export default function Home() {
           background: #000;
           border-bottom: var(--border);
           overflow: hidden;
-          min-height: 150px;
+          min-height: 0;
         }
         .vslot:last-child { border-bottom: none; }
 
@@ -308,7 +310,10 @@ export default function Home() {
         /* ────── CONTROLS ────── */
         .ctrl {
           border-top: var(--border);
-          flex-shrink: 0;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
         }
 
         .ctrl-meta {
@@ -321,6 +326,7 @@ export default function Home() {
           letter-spacing: 0.18em;
           text-transform: uppercase;
           color: var(--muted);
+          flex-shrink: 0;
         }
 
         .ctrl-meta-l { display: flex; align-items: center; gap: 8px; }
@@ -328,6 +334,8 @@ export default function Home() {
         /* Button row */
         .btn-row {
           display: flex;
+          flex: 1;
+          min-height: 0;
         }
 
         .cbtn {
@@ -336,10 +344,10 @@ export default function Home() {
           border: none;
           cursor: pointer;
           font-family: var(--ff-d);
-          font-size: clamp(1.8rem, 6vw, 2.6rem);
+          font-size: clamp(1.6rem, 5.5vw, 2.6rem);
           letter-spacing: 0.07em;
           text-transform: uppercase;
-          padding: 18px 20px;
+          padding: 0 20px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -348,6 +356,7 @@ export default function Home() {
           user-select: none;
           touch-action: manipulation;
           line-height: 1;
+          min-height: 64px;
         }
         .cbtn:last-child { border-right: none; }
         .cbtn:active { filter: brightness(1.3); transform: scale(0.97); }
@@ -414,11 +423,13 @@ export default function Home() {
           .hdr { height: 60px; }
           .hdr-title { font-size: 1.9rem; }
 
-          .body { flex-direction: row; }
+          .body { flex-direction: row; overflow: hidden; }
 
           .vids {
             flex: 1;
             flex-direction: row;
+            height: auto;
+            max-height: none;
             border-right: var(--border);
           }
 
@@ -431,14 +442,13 @@ export default function Home() {
 
           .ctrl {
             width: 240px;
+            flex: none;
             border-top: none;
-            display: flex;
-            flex-direction: column;
+            border-left: none;
           }
 
-          .btn-row { flex: 1; flex-direction: column; }
+          .btn-row { flex-direction: column; }
           .cbtn {
-            flex: 1;
             border-right: none;
             border-bottom: var(--border);
             font-size: 2.2rem;
@@ -611,4 +621,4 @@ export default function Home() {
       </div>
     </>
   );
-      }
+}
