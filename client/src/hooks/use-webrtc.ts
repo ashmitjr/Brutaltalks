@@ -13,10 +13,10 @@ const ICE_SERVERS: RTCConfiguration = {
 
 export function useWebRTC() {
   const [appState, setAppState] = useState<AppState>("IDLE");
-  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
@@ -24,9 +24,9 @@ export function useWebRTC() {
   const wsRef = useRef<WebSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
 
-  /* -------------------- MEDIA -------------------- */
+  /* ---------- MEDIA ---------- */
   const initLocalMedia = useCallback(async () => {
-    if (localStreamRef.current) return localStreamRef.current;
+    if (localStreamRef.current) return;
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
@@ -35,52 +35,171 @@ export function useWebRTC() {
 
     localStreamRef.current = stream;
 
-    // 🔥 CRITICAL FIX: attach SELF VIDEO immediately
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = stream;
+      localVideoRef.current.muted = true;
+      localVideoRef.current.playsInline = true;
     }
-
-    return stream;
   }, []);
 
-  /* -------------------- PEER CLEANUP -------------------- */
+  /* ---------- CLEANUP ---------- */
   const cleanupPeer = useCallback(() => {
-    if (pcRef.current) {
-      pcRef.current.onicecandidate = null;
-      pcRef.current.ontrack = null;
-      pcRef.current.close();
-      pcRef.current = null;
-    }
+    pcRef.current?.close();
+    pcRef.current = null;
 
-    if (remoteStreamRef.current) {
-      remoteStreamRef.current.getTracks().forEach((t) => t.stop());
-      remoteStreamRef.current = null;
-    }
+    remoteStreamRef.current?.getTracks().forEach(t => t.stop());
+    remoteStreamRef.current = null;
 
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
     }
   }, []);
 
-  /* -------------------- FULL DISCONNECT -------------------- */
   const disconnect = useCallback(() => {
     cleanupPeer();
 
-    if (wsRef.current) {
-      try {
-        wsRef.current.send(JSON.stringify({ type: "leave" }));
-      } catch {}
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+    wsRef.current?.close();
+    wsRef.current = null;
 
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((t) => t.stop());
-      localStreamRef.current = null;
-    }
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    localStreamRef.current = null;
 
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
+    }
+
+    setAppState("IDLE");
+    setErrorMsg("");
+  }, [cleanupPeer]);
+
+  /* ---------- SIGNAL HANDLER ---------- */
+  const handleSignal = useCallback(async (data: any) => {
+    try {
+      switch (data.type) {
+        case "waiting":
+          setAppState("WAITING");
+          break;
+
+        case "paired": {
+          cleanupPeer();
+          setAppState("CONNECTED");
+
+          const pc = new RTCPeerConnection(ICE_SERVERS);
+          pcRef.current = pc;
+
+          localStreamRef.current?.getTracks().forEach(track =>
+            pc.addTrack(track, localStreamRef.current!)
+          );
+
+          pc.ontrack = (e) => {
+            if (!remoteStreamRef.current) {
+              remoteStreamRef.current = new MediaStream();
+              if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = remoteStreamRef.current;
+                remoteVideoRef.current.playsInline = true;
+              }
+            }
+            remoteStreamRef.current.addTrack(e.track);
+          };
+
+          pc.onicecandidate = (e) => {
+            if (e.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({
+                type: "iceCandidate",
+                payload: { candidate: e.candidate },
+              }));
+            }
+          };
+
+          if (data.payload?.initiator) {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            wsRef.current?.send(JSON.stringify({
+              type: "offer",
+              payload: { sdp: offer },
+            }));
+          }
+          break;
+        }
+
+        case "offer": {
+          if (!pcRef.current) return;
+          await pcRef.current.setRemoteDescription(data.payload.sdp);
+          const answer = await pcRef.current.createAnswer();
+          await pcRef.current.setLocalDescription(answer);
+          wsRef.current?.send(JSON.stringify({
+            type: "answer",
+            payload: { sdp: answer },
+          }));
+          break;
+        }
+
+        case "answer":
+          await pcRef.current?.setRemoteDescription(data.payload.sdp);
+          break;
+
+        case "iceCandidate":
+          await pcRef.current?.addIceCandidate(data.payload.candidate);
+          break;
+
+        case "partnerDisconnected":
+          cleanupPeer();
+          setAppState("WAITING");
+          wsRef.current?.send(JSON.stringify({ type: "join" }));
+          break;
+      }
+    } catch (err) {
+      console.error("Signal error", err);
+      setErrorMsg("SIGNAL ERROR");
+      setAppState("ERROR");
+    }
+  }, [cleanupPeer]);
+
+  /* ---------- START ---------- */
+  const start = useCallback(async () => {
+    try {
+      setAppState("REQUESTING_MEDIA");
+      setErrorMsg("");
+
+      await initLocalMedia();
+
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        const protocol = location.protocol === "https:" ? "wss" : "ws";
+        wsRef.current = new WebSocket(`${protocol}://${location.host}/ws`);
+
+        wsRef.current.onopen = () => {
+          setAppState("WAITING");
+          wsRef.current?.send(JSON.stringify({ type: "join" }));
+        };
+
+        wsRef.current.onmessage = e => handleSignal(JSON.parse(e.data));
+
+        wsRef.current.onerror = () => {
+          setErrorMsg("CONNECTION ERROR");
+          setAppState("ERROR");
+        };
+      }
+    } catch (err: any) {
+      setErrorMsg(
+        err.name === "NotAllowedError"
+          ? "CAMERA / MIC DENIED"
+          : "FAILED TO START"
+      );
+      setAppState("ERROR");
+    }
+  }, [handleSignal, initLocalMedia]);
+
+  useEffect(() => () => disconnect(), [disconnect]);
+
+  return {
+    appState,
+    errorMsg,
+    localVideoRef,
+    remoteVideoRef,
+    start,
+    disconnect,
+  };
+    }      localVideoRef.current.srcObject = null;
     }
 
     setErrorMsg("");
