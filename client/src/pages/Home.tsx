@@ -2,7 +2,13 @@ import React, { useEffect } from "react";
 import { useWebRTC } from "@/hooks/use-webrtc";
 import { BrutalButton } from "@/components/BrutalButton";
 import { NoiseOverlay } from "@/components/NoiseOverlay";
-import { VideoOff, MicOff, AlertTriangle, Zap, XSquare } from "lucide-react";
+import {
+  VideoOff,
+  MicOff,
+  AlertTriangle,
+  Zap,
+  XSquare,
+} from "lucide-react";
 
 export default function Home() {
   const {
@@ -27,10 +33,10 @@ export default function Home() {
   }, [appState]);
 
   return (
-    <main className="relative h-screen w-screen bg-background overflow-hidden flex items-center justify-center">
+    <main className="relative h-screen w-screen overflow-hidden bg-background flex items-center justify-center">
       <NoiseOverlay />
 
-      {/* IDLE */}
+      {/* IDLE VIEW */}
       {appState === "IDLE" && (
         <div className="z-10 text-center space-y-10">
           <h1 className="text-6xl font-bold tracking-tighter">
@@ -46,16 +52,18 @@ export default function Home() {
 
           <div className="flex gap-6 text-xs opacity-60">
             <span className="flex items-center">
-              <VideoOff className="mr-1 h-4 w-4" /> Camera Required
+              <VideoOff className="mr-1 h-4 w-4" />
+              Camera Required
             </span>
             <span className="flex items-center">
-              <MicOff className="mr-1 h-4 w-4" /> Mic Required
+              <MicOff className="mr-1 h-4 w-4" />
+              Mic Required
             </span>
           </div>
         </div>
       )}
 
-      {/* ERROR */}
+      {/* ERROR VIEW */}
       {appState === "ERROR" && (
         <div className="z-10 text-center space-y-6">
           <AlertTriangle className="h-20 w-20 text-destructive mx-auto" />
@@ -64,10 +72,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* ACTIVE */}
+      {/* ACTIVE VIEW */}
       {(appState === "WAITING" || appState === "CONNECTED") && (
         <div className="absolute inset-0">
-          {/* Remote */}
+          {/* Remote Video */}
           <video
             ref={remoteVideoRef}
             autoPlay
@@ -75,12 +83,53 @@ export default function Home() {
             className="absolute inset-0 w-full h-full object-cover bg-black"
           />
 
-          {/* Waiting overlay */}
+          {/* Waiting Overlay */}
           {appState === "WAITING" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black">
               <h2 className="text-6xl font-bold text-accent animate-pulse">
                 SEARCHING…
               </h2>
+            </div>
+          )}
+
+          {/* Local Video */}
+          <div className="absolute top-4 right-4 w-40 aspect-video bg-black z-20 brutal-border">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              disablePictureInPicture
+              className="w-full h-full object-cover"
+            />
+            <span className="absolute bottom-0 left-0 bg-background px-2 text-xs font-bold">
+              YOU
+            </span>
+          </div>
+
+          {/* Controls */}
+          <div className="absolute bottom-0 w-full h-32 bg-background brutal-border flex gap-4 p-4">
+            <BrutalButton
+              variant="destructive"
+              onClick={disconnect}
+              className="flex-1"
+            >
+              <XSquare className="mr-2" />
+              END
+            </BrutalButton>
+
+            <BrutalButton
+              onClick={next}
+              className="flex-[2] text-3xl bg-accent text-black"
+            >
+              NEXT →
+            </BrutalButton>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}              </h2>
             </div>
           )}
 
