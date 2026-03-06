@@ -2,6 +2,9 @@
 
 Connect with random strangers around the world — no accounts, no data, no trace. Just talk.
 
+![6149801055550639720](https://github.com/user-attachments/assets/2e5f1ecf-b490-41eb-910a-3257d5236c99)
+
+
 ## What It Is
 
 Brutal Talks is an Omegle-style random video/audio chat app. Open it, get matched with a stranger, talk, disconnect. Nothing is stored, nothing is tracked.
