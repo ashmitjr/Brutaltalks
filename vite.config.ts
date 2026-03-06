@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      // ❌ Replit plugins removed (Railway incompatible)
     ],
 
     root: path.resolve(__dirname, "client"),
