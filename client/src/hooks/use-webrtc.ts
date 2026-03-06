@@ -195,6 +195,18 @@ export function useWebRTC() {
     }
   }, [handleSignal, initLocalMedia]);
 
+  // Skip to next stranger
+  const next = useCallback(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+    cleanupPeer();
+    setAppState("WAITING");
+
+    // Tell server to unpair and rejoin queue
+    wsRef.current.send(JSON.stringify({ type: "leave" }));
+    wsRef.current.send(JSON.stringify({ type: "join" }));
+  }, [cleanupPeer]);
+
   useEffect(() => {
     return () => disconnect();
   }, [disconnect]);
@@ -206,5 +218,6 @@ export function useWebRTC() {
     remoteVideoRef,
     start,
     disconnect,
+    next,
   };
-                          }
+}
