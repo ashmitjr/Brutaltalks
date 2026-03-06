@@ -4,6 +4,8 @@ Connect with random strangers around the world — no accounts, no data, no trac
 
 ![6149801055550639720](https://github.com/user-attachments/assets/2e5f1ecf-b490-41eb-910a-3257d5236c99)
 
+live link : https://brutaltalks.tech/
+
 
 ## What It Is
 
